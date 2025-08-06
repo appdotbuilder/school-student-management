@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { trpc } from '@/utils/trpc';
 import type { User, CreateUserInput, Student, CreateStudentInput, UserRole } from '../../../server/src/schema';
+import { BulkStudentUpload } from './BulkStudentUpload';
 
 interface AdminDashboardProps {
   user: User;
@@ -395,9 +396,10 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="students">Student Management</TabsTrigger>
+          <TabsTrigger value="bulk-upload">Bulk Upload</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
@@ -709,6 +711,13 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
               </TableBody>
             </Table>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="bulk-upload" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold">Bulk Student Upload</h2>
+          </div>
+          <BulkStudentUpload onStudentsCreated={loadStudents} />
         </TabsContent>
       </Tabs>
     </div>

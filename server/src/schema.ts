@@ -222,3 +222,30 @@ export const reportInputSchema = z.object({
 });
 
 export type ReportInput = z.infer<typeof reportInputSchema>;
+
+// Bulk student upload schemas
+export const studentUploadRowSchema = z.object({
+  student_id: z.string().min(1),
+  full_name: z.string().min(2),
+  class: z.string().min(1),
+  grade_level: z.number().int().min(1).max(12)
+});
+
+export type StudentUploadRow = z.infer<typeof studentUploadRowSchema>;
+
+export const studentUploadPreviewSchema = z.object({
+  valid_rows: z.array(studentUploadRowSchema),
+  invalid_rows: z.array(z.object({
+    row_number: z.number(),
+    data: z.record(z.unknown()),
+    errors: z.array(z.string())
+  }))
+});
+
+export type StudentUploadPreview = z.infer<typeof studentUploadPreviewSchema>;
+
+export const bulkCreateStudentsInputSchema = z.object({
+  students: z.array(studentUploadRowSchema)
+});
+
+export type BulkCreateStudentsInput = z.infer<typeof bulkCreateStudentsInputSchema>;

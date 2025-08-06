@@ -20,7 +20,8 @@ import {
   loginInputSchema,
   reportInputSchema,
   userRoleSchema,
-  counselingStatusSchema
+  counselingStatusSchema,
+  bulkCreateStudentsInputSchema
 } from './schema';
 
 // Handler imports
@@ -31,6 +32,8 @@ import { deleteUser } from './handlers/delete_user';
 import { createStudent } from './handlers/create_student';
 import { getStudents, getStudentById, getStudentsByClass } from './handlers/get_students';
 import { updateStudent } from './handlers/update_student';
+import { parseStudentUpload } from './handlers/parse_student_upload';
+import { bulkCreateStudents } from './handlers/bulk_create_students';
 import { createAchievement } from './handlers/create_achievement';
 import { getAchievements, getAchievementsByStudent, getAchievementsByClass } from './handlers/get_achievements';
 import { createViolation } from './handlers/create_violation';
@@ -117,6 +120,15 @@ const appRouter = router({
   updateStudent: publicProcedure
     .input(updateStudentInputSchema)
     .mutation(({ input }) => updateStudent(input)),
+
+  // Bulk student upload
+  parseStudentUpload: publicProcedure
+    .input(z.string())
+    .mutation(({ input }) => parseStudentUpload(input)),
+
+  bulkCreateStudents: publicProcedure
+    .input(bulkCreateStudentsInputSchema)
+    .mutation(({ input }) => bulkCreateStudents(input)),
 
   // Achievement management
   createAchievement: publicProcedure
