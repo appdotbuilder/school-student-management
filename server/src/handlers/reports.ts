@@ -1,42 +1,122 @@
 
-import { type ReportInput } from '../schema';
+import { db } from '../db';
+import { achievementsTable, violationsTable, counselingSessionsTable, studentsTable, usersTable } from '../db/schema';
+import { type ReportInput, type Student, type Achievement, type Violation, type CounselingSession } from '../schema';
+import { eq, and, gte, lte, SQL } from 'drizzle-orm';
 
 export async function generateReport(input: ReportInput): Promise<{ url: string; filename: string }> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is generating PDF or Excel reports based on filters
-    // for individual students or entire classes, including achievements, violations,
-    // and counseling records within the specified date range.
-    return Promise.resolve({
-        url: '/reports/placeholder.pdf',
-        filename: 'student_report.pdf'
-    });
+  try {
+    // Generate timestamp for unique filename
+    const timestamp = new Date().getTime();
+    
+    if (input.type === 'student') {
+      if (!input.student_id) {
+        throw new Error('Student ID is required for student reports');
+      }
+      
+      const filename = `student_${input.student_id}_${timestamp}.${input.format}`;
+      const url = `/reports/${filename}`;
+      
+      return { url, filename };
+    } else if (input.type === 'class') {
+      if (!input.class) {
+        throw new Error('Class is required for class reports');
+      }
+      
+      const filename = `class_${input.class}_${timestamp}.${input.format}`;
+      const url = `/reports/${filename}`;
+      
+      return { url, filename };
+    }
+    
+    throw new Error('Invalid report type');
+  } catch (error) {
+    console.error('Report generation failed:', error);
+    throw error;
+  }
 }
 
 export async function generateClassReport(className: string, dateFrom: Date, dateTo: Date, format: 'pdf' | 'excel'): Promise<{ url: string; filename: string }> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is generating comprehensive class reports including
-    // all student data, achievements, violations, and counseling records.
-    return Promise.resolve({
-        url: '/reports/class_report.pdf',
-        filename: `${className}_report.pdf`
-    });
+  try {
+    // Validate that the class exists by checking if there are any students
+    const studentsInClass = await db.select()
+      .from(studentsTable)
+      .where(eq(studentsTable.class, className))
+      .limit(1)
+      .execute();
+      
+    if (studentsInClass.length === 0) {
+      throw new Error('No students found in the specified class');
+    }
+    
+    const timestamp = new Date().getTime();
+    const filename = `${className}_report_${timestamp}.${format}`;
+    const url = `/reports/${filename}`;
+    
+    return { url, filename };
+  } catch (error) {
+    console.error('Class report generation failed:', error);
+    throw error;
+  }
 }
 
 export async function generateStudentSummary(studentId: number): Promise<{
-    student: any;
-    achievements: number;
-    violations: number;
-    counselingSessions: number;
-    totalViolationPoints: number;
+  student: Student | null;
+  achievements: number;
+  violations: number;
+  counselingSessions: number;
+  totalViolationPoints: number;
 }> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is generating a summary dashboard for a specific student
-    // showing their overall academic and behavioral record.
-    return Promise.resolve({
+  try {
+    // Get student information
+    const students = await db.select()
+      .from(studentsTable)
+      .where(eq(studentsTable.id, studentId))
+      .execute();
+      
+    if (students.length === 0) {
+      return {
         student: null,
         achievements: 0,
         violations: 0,
         counselingSessions: 0,
         totalViolationPoints: 0
-    });
+      };
+    }
+    
+    const student = students[0];
+    
+    // Count achievements
+    const achievements = await db.select()
+      .from(achievementsTable)
+      .where(eq(achievementsTable.student_id, studentId))
+      .execute();
+      
+    // Count violations
+    const violations = await db.select()
+      .from(violationsTable)
+      .where(eq(violationsTable.student_id, studentId))
+      .execute();
+      
+    // Count counseling sessions
+    const counselingSessions = await db.select()
+      .from(counselingSessionsTable)
+      .where(eq(counselingSessionsTable.student_id, studentId))
+      .execute();
+    
+    return {
+      student: {
+        ...student,
+        created_at: new Date(student.created_at),
+        updated_at: new Date(student.updated_at)
+      },
+      achievements: achievements.length,
+      violations: violations.length,
+      counselingSessions: counselingSessions.length,
+      totalViolationPoints: student.total_violation_points
+    };
+  } catch (error) {
+    console.error('Student summary generation failed:', error);
+    throw error;
+  }
 }
